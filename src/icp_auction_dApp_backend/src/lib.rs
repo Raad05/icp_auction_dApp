@@ -55,3 +55,17 @@ thread_local! {
 
     static ITEM_MAP:RefCell<StableBTreeMap<u64, Item, Memory>> = RefCell::new(StableBTreeMap::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0)))));
 }
+
+// getter functions
+#[ic_cdk::query]
+fn get_all_items() -> Vec<Item> {
+    ITEM_MAP.with(|i| {
+        let map = i.borrow();
+        let mut items: Vec<Item> = Vec::new();
+
+        for (_, item) in map.iter() {
+            items.push(item);
+        }
+        items
+    })
+}
