@@ -79,3 +79,16 @@ fn get_item(key: u64) -> Option<Item> {
 fn get_item_count() -> u64 {
     ITEM_MAP.with(|i| i.borrow().len())
 }
+
+// setter functions
+#[ic_cdk::update]
+fn create_item(key: u64, item: CreateItem) -> Option<Item> {
+    let value: Item = Item {
+        name: item.name,
+        description: item.description,
+        is_listed: item.is_listed,
+        bid_users: vec![],
+        owner: ic_cdk::caller(),
+    };
+    ITEM_MAP.with(|i| i.borrow_mut().insert(key, value))
+}
