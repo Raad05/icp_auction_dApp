@@ -74,3 +74,8 @@ fn get_all_items() -> Vec<Item> {
 fn get_item(key: u64) -> Option<Item> {
     ITEM_MAP.with(|i| i.borrow().get(&key))
 }
+
+#[ic_cdk::query]
+fn get_item_count() -> u64 {
+    ITEM_MAP.with(|i| i.borrow().len())
+}
