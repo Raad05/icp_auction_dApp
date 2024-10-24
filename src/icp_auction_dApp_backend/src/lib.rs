@@ -92,3 +92,35 @@ fn create_item(key: u64, item: CreateItem) -> Option<Item> {
     };
     ITEM_MAP.with(|i| i.borrow_mut().insert(key, value))
 }
+
+#[ic_cdk::update]
+fn edit_item(key: u64, item: CreateItem) -> Result<(), BidError> {
+    ITEM_MAP.with(|i| {
+        let old_item_opt: Option<Item> = i.borrow().get(&key);
+        let old_item: Item;
+
+        match old_item_opt {
+            Some(value) => old_item = value,
+            None => return Err(BidError::NoSuchItem),
+        }
+
+        if ic_cdk::caller() != old_item.owner {
+            return Err(BidError::AccessRejected);
+        }
+
+        let value: Item = Item {
+            name: item.name,
+            description: item.description,
+            is_listed: item.is_listed,
+            bid_users: old_item.bid_users,
+            owner: old_item.owner,
+        };
+
+        let res: Option<Item> = i.borrow_mut().insert(key, value);
+
+        match res {
+            Some(_) => Ok(()),
+            None => return Err(BidError::UpdateError),
+        }
+    })
+}
