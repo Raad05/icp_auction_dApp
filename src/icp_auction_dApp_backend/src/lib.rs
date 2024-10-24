@@ -82,7 +82,7 @@ fn get_item_count() -> u64 {
 
 // setter functions
 #[ic_cdk::update]
-fn create_item(key: u64, item: CreateItem) -> Option<Item> {
+fn create_item(key: u64, item: CreateItem) -> Result<(), BidError> {
     let value: Item = Item {
         name: item.name,
         description: item.description,
@@ -90,7 +90,12 @@ fn create_item(key: u64, item: CreateItem) -> Option<Item> {
         bid_users: vec![],
         owner: ic_cdk::caller(),
     };
-    ITEM_MAP.with(|i| i.borrow_mut().insert(key, value))
+    let res: Option<Item> = ITEM_MAP.with(|i| i.borrow_mut().insert(key, value));
+
+    match res {
+        Some(_) => Ok(()),
+        None => return Err(BidError::UpdateError),
+    }
 }
 
 #[ic_cdk::update]
