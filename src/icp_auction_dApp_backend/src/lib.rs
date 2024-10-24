@@ -89,11 +89,6 @@ fn get_item(key: u64) -> Option<Item> {
     ITEM_MAP.with(|i| i.borrow().get(&key))
 }
 
-#[ic_cdk::query]
-fn get_item_count() -> u64 {
-    ITEM_MAP.with(|i| i.borrow().len())
-}
-
 // setter functions
 #[ic_cdk::update]
 fn create_item(key: u64, item: CreateItem) -> Result<(), BidError> {
