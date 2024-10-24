@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "icp_auction_dApp_backend": {
+      "candid": "src/icp_auction_dApp_backend/icp_auction_dApp_backend.did",
+      "package": "icp_auction_dApp_backend",
+      "type": "rust"
+    },
+    "icp_auction_dApp_frontend": {
+      "dependencies": [
+        "icp_auction_dApp_backend"
+      ],
+      "source": [
+        "src/icp_auction_dApp_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "icp_auction_dApp_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
