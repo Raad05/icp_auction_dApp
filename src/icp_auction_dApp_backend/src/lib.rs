@@ -89,6 +89,27 @@ fn get_item(key: u64) -> Option<Item> {
     ITEM_MAP.with(|i| i.borrow().get(&key))
 }
 
+#[ic_cdk::query]
+fn get_item_sold_for_most() -> Option<Item> {
+    ITEM_MAP.with(|i| {
+        let map = i.borrow();
+        let mut highest_bid_item: Option<Item> = None;
+        let mut highest_bid_amount: u64 = 0;
+
+        for (_, item) in map.iter() {
+            if !item.is_listed {
+                if let Some(value) = item.bid_users.iter().max_by_key(|b| b.bid_amount) {
+                    if value.bid_amount > highest_bid_amount {
+                        highest_bid_amount = value.bid_amount;
+                        highest_bid_item = Some(item);
+                    }
+                }
+            }
+        }
+        highest_bid_item
+    })
+}
+
 // setter functions
 #[ic_cdk::update]
 fn create_item(key: u64, item: CreateItem) -> Result<(), BidError> {
