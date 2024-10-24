@@ -77,32 +77,10 @@ fn get_all_items() -> Vec<Item> {
 }
 
 #[ic_cdk::query]
-fn get_listed_items() -> Vec<Item> {
+fn get_listed_items_count() -> u64 {
     ITEM_MAP.with(|i| {
         let map = i.borrow();
-        let mut listed_items: Vec<Item> = Vec::new();
-
-        for (_, item) in map.iter() {
-            if item.is_listed {
-                listed_items.push(item);
-            }
-        }
-        listed_items
-    })
-}
-
-#[ic_cdk::query]
-fn get_unlisted_items() -> Vec<Item> {
-    ITEM_MAP.with(|i| {
-        let map = i.borrow();
-        let mut unlisted_items: Vec<Item> = Vec::new();
-
-        for (_, item) in map.iter() {
-            if !item.is_listed {
-                unlisted_items.push(item);
-            }
-        }
-        unlisted_items
+        map.iter().filter(|(_, item)| item.is_listed).count() as u64
     })
 }
 
