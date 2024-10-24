@@ -14,6 +14,8 @@ enum BidError {
     NoSuchItem,
     AccessRejected,
     UpdateError,
+    ItemNotListed,
+    BidMoreForThisItem,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -134,14 +136,14 @@ fn get_item_bid_on_most() -> Option<Item> {
 // setter functions
 #[ic_cdk::update]
 fn create_item(key: u64, item: CreateItem) -> Result<(), BidError> {
-    let value: Item = Item {
+    let new_item: Item = Item {
         name: item.name,
         description: item.description,
         is_listed: item.is_listed,
         bid_users: vec![],
         owner: ic_cdk::caller(),
     };
-    let res: Option<Item> = ITEM_MAP.with(|i| i.borrow_mut().insert(key, value));
+    let res: Option<Item> = ITEM_MAP.with(|i| i.borrow_mut().insert(key, new_item));
 
     match res {
         Some(_) => Ok(()),
@@ -164,7 +166,7 @@ fn edit_item(key: u64, item: CreateItem) -> Result<(), BidError> {
             return Err(BidError::AccessRejected);
         }
 
-        let value: Item = Item {
+        let edited_item: Item = Item {
             name: item.name,
             description: item.description,
             is_listed: item.is_listed,
@@ -172,7 +174,7 @@ fn edit_item(key: u64, item: CreateItem) -> Result<(), BidError> {
             owner: old_item.owner,
         };
 
-        let res: Option<Item> = i.borrow_mut().insert(key, value);
+        let res: Option<Item> = i.borrow_mut().insert(key, edited_item);
 
         match res {
             Some(_) => Ok(()),
@@ -204,6 +206,47 @@ fn unlist_item(key: u64) -> Result<(), BidError> {
             Some(value) => item.owner = value.bidder_id,
             None => return Err(BidError::UpdateError),
         }
+
+        let res: Option<Item> = i.borrow_mut().insert(key, item);
+
+        match res {
+            Some(_) => Ok(()),
+            None => return Err(BidError::UpdateError),
+        }
+    })
+}
+
+#[ic_cdk::update]
+fn bid(key: u64, amount: u64) -> Result<(), BidError> {
+    ITEM_MAP.with(|i| {
+        let item_opt: Option<Item> = i.borrow().get(&key);
+        let mut item: Item;
+
+        match item_opt {
+            Some(value) => item = value,
+            None => return Err(BidError::NoSuchItem),
+        }
+
+        if !item.is_listed {
+            return Err(BidError::ItemNotListed);
+        }
+
+        let current_highest_bid = item
+            .bid_users
+            .iter()
+            .max_by_key(|b| b.bid_amount)
+            .map_or(0, |b| b.bid_amount);
+
+        if amount <= current_highest_bid {
+            return Err(BidError::BidMoreForThisItem);
+        }
+
+        let new_bid: Bidder = Bidder {
+            bidder_id: ic_cdk::caller(),
+            bid_amount: amount,
+        };
+
+        item.bid_users.push(new_bid);
 
         let res: Option<Item> = i.borrow_mut().insert(key, item);
 
