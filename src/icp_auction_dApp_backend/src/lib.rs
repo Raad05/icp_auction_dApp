@@ -16,13 +16,19 @@ enum BidError {
     UpdateError,
 }
 
+#[derive(CandidType, Deserialize)]
+struct Bidder {
+    bidder_id: candid::Principal,
+    bid_amount: u64,
+}
+
 // structs
 #[derive(CandidType, Deserialize)]
 struct Item {
     name: String,
     description: String,
     is_listed: bool,
-    bid_users: Vec<candid::Principal>,
+    bid_users: Vec<Bidder>,
     owner: candid::Principal,
 }
 
@@ -67,6 +73,21 @@ fn get_all_items() -> Vec<Item> {
             items.push(item);
         }
         items
+    })
+}
+
+#[ic_cdk::query]
+fn get_unlisted_items() -> Vec<Item> {
+    ITEM_MAP.with(|i| {
+        let map = i.borrow();
+        let mut unlisted_items: Vec<Item> = Vec::new();
+
+        for (_, item) in map.iter() {
+            if !item.is_listed {
+                unlisted_items.push(item);
+            }
+        }
+        unlisted_items
     })
 }
 
@@ -122,6 +143,39 @@ fn edit_item(key: u64, item: CreateItem) -> Result<(), BidError> {
         };
 
         let res: Option<Item> = i.borrow_mut().insert(key, value);
+
+        match res {
+            Some(_) => Ok(()),
+            None => return Err(BidError::UpdateError),
+        }
+    })
+}
+
+#[ic_cdk::update]
+fn unlist_item(key: u64) -> Result<(), BidError> {
+    ITEM_MAP.with(|i| {
+        let item_opt: Option<Item> = i.borrow().get(&key);
+        let mut item: Item;
+
+        match item_opt {
+            Some(value) => item = value,
+            None => return Err(BidError::NoSuchItem),
+        }
+
+        if ic_cdk::caller() != item.owner {
+            return Err(BidError::AccessRejected);
+        }
+
+        item.is_listed = false;
+
+        let max_bidder: Option<&Bidder> = item.bid_users.iter().max_by_key(|b| b.bid_amount);
+
+        match max_bidder {
+            Some(value) => item.owner = value.bidder_id,
+            None => return Err(BidError::UpdateError),
+        }
+
+        let res: Option<Item> = i.borrow_mut().insert(key, item);
 
         match res {
             Some(_) => Ok(()),
