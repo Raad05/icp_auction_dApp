@@ -1,0 +1,47 @@
+// enums
+type Result = variant {
+    Ok;
+    Err: BidError;
+};
+
+type BidError = variant {
+    AlreadyBid;
+    NoSuchItem;
+    AccessRejected;
+    UpdateError;
+    ItemNotListed;
+    BidMoreForThisItem;
+};
+
+// structs
+type Bidder = record {
+    bidder_id: principal;
+    bid_amount: nat64;
+};
+
+type Item = record {
+    name: text;
+    description: text;
+    is_listed: bool;
+    bid_users: vec Bidder;
+    owner: principal;
+};
+
+type CreateItem = record {
+    name: text;
+    description: text;
+    is_listed: bool;
+};
+
+// functions
+service: {
+    "get_all_items": () -> (vec Item) query;
+    "get_listed_items_count": () -> nat64 query;
+    "get_item": (nat64) -> (opt Item) query;
+    "get_item_sold_for_most": () -> (opt Item) query;
+    "get_item_bid_on_most": () -> (opt Item) query;
+    "create_item": (nat64, CreateItem) -> (Result);
+    "edit_item": (nat64, CreateItem) -> (Result);
+    "unlist_item": (nat64) -> (Result);
+    "bid": (nat64, nat64) -> (Result);
+};
