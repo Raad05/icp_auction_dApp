@@ -36,7 +36,7 @@ type CreateItem = record {
 // functions
 service: {
     "get_all_items": () -> (vec Item) query;
-    "get_listed_items_count": () -> nat64 query;
+    "get_listed_items_count": () -> (nat64) query;
     "get_item": (nat64) -> (opt Item) query;
     "get_item_sold_for_most": () -> (opt Item) query;
     "get_item_bid_on_most": () -> (opt Item) query;
